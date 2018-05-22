@@ -407,6 +407,101 @@ int coco_remove_directory(const char *path) {
   return r;
 #endif
 }
+
+/**
+ * @brief Performs the evaluation of x using an external process given in command. The result is
+ * saved to y.
+ *
+ * Should work across different platforms/compilers.
+ */
+static void coco_external_evaluate(const double *x,
+                                   const size_t number_of_variables,
+                                   double *y,
+                                   const size_t number_of_objectives,
+                                   const char *command) {
+  size_t i = 0;
+  const int precision_x = 8;
+
+#if defined(HAVE_CREATE_PROCESS)
+  DWORD dwAttrib = GetFileAttributesA(path);
+  res = (dwAttrib != INVALID_FILE_ATTRIBUTES) && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+#elif defined(HAVE_EXEC)
+  int stdin_pipe[2];
+  int stdout_pipe[2];
+  int child;
+  char ch;
+  int result;
+
+  if (pipe(stdin_pipe) < 0) {
+    coco_error("coco_external_evaluate(): child process input redirect failed");
+    return -1;
+  }
+  if (pipe(stdout_pipe) < 0) {
+    close(stdin_pipe[PIPE_READ]);
+    close(stdin_pipe[PIPE_WRITE]);
+    coco_error("coco_external_evaluate(): child process output redirect failed");
+    return -1;
+  }
+
+  child = fork();
+  if (child == 0) {
+    /* Child continues here */
+
+    /* Redirect stdin */
+    if (dup2(stdin_pipe[PIPE_READ], STDIN_FILENO) == -1) {
+      coco_error("coco_external_evaluate(): stdin redirect failed");
+    }
+
+    /* Redirect stdout */
+    if (dup2(stdout_pipe[PIPE_WRITE], STDOUT_FILENO) == -1) {
+      coco_error("coco_external_evaluate(): stdout redirect failed");
+    }
+
+    /* Redirect stderr */
+    if (dup2(stdout_pipe[PIPE_WRITE], STDERR_FILENO) == -1) {
+      coco_error("coco_external_evaluate(): strerr redirect failed");
+    }
+
+    /* All these are for use by parent only */
+    close(stdin_pipe[PIPE_READ]);
+    close(stdin_pipe[PIPE_WRITE]);
+    close(stdout_pipe[PIPE_READ]);
+    close(stdout_pipe[PIPE_WRITE]);
+
+    /* Run child process */
+    result = execve(szCommand, aArguments, aEnvironment);
+
+    if (result == -1)
+      coco_error("coco_external_evaluate(): failed to create child process");
+
+  } else if (child > 0) {
+    /* Parent continues here */
+
+    /* Close unused file descriptors, these are for child only */
+    close(stdin_pipe[PIPE_READ]);
+    close(stdout_pipe[PIPE_WRITE]);
+
+    /* Just a char by char read here, you can change it accordingly  TODO */
+    while (read(stdout_pipe[PIPE_READ], &ch, 1) == 1) {
+      write(STDOUT_FILENO, &ch, 1);
+    }
+
+    /* done with these in this example program, you would normally keep these
+       open of course as long as you want to talk to the child  TODO */
+    close(stdin_pipe[PIPE_WRITE]);
+    close(stdout_pipe[PIPE_READ]);
+  } else {
+    /* failed to create child */
+    coco_error("coco_external_evaluate(): failed to create child process");
+    close(stdin_pipe[PIPE_READ]);
+    close(stdin_pipe[PIPE_WRITE]);
+    close(stdout_pipe[PIPE_READ]);
+    close(stdout_pipe[PIPE_WRITE]);
+  }
+#else
+  coco_error("coco_external_evaluate(): unsupported platform");
+#endif
+}
 /**@}*/
 
 /***********************************************************************************************************/

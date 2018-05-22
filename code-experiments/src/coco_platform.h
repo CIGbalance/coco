@@ -15,27 +15,34 @@
 
 #include <stddef.h>
 
-/* Definitions of COCO_PATH_MAX, coco_path_separator, HAVE_GFA and HAVE_STAT heavily used by functions in
- * coco_utilities.c */
+/* Definitions of COCO_PATH_MAX, coco_path_separator, HAVE_GFA, HAVE_STAT, HAVE_CREATE_PROCESS and
+ * HAVE_EXEC heavily used by functions in coco_utilities.c */
 #if defined(_WIN32) || defined(_WIN64) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <windows.h>
 static const char *coco_path_separator = "\\";
 #define COCO_PATH_MAX MAX_PATH
 #define HAVE_GFA 1
+#define HAVE_CREATE_PROCESS 1
 #elif defined(__gnu_linux__)
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <linux/limits.h>
 static const char *coco_path_separator = "/";
 #define HAVE_STAT 1
 #define COCO_PATH_MAX PATH_MAX
+#define HAVE_EXEC 1
 #elif defined(__APPLE__)
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <sys/syslimits.h>
 static const char *coco_path_separator = "/";
 #define HAVE_STAT 1
 #define COCO_PATH_MAX PATH_MAX
+#define HAVE_EXEC 1
 #elif defined(__FreeBSD__)
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -57,6 +64,9 @@ static const char *coco_path_separator = "/";
 #if !defined(COCO_PATH_MAX)
 #error COCO_PATH_MAX undefined
 #endif
+/* Pipes used in external evaluation */
+#define PIPE_READ 0
+#define PIPE_WRITE 1
 
 /* Definitions needed for creating and removing directories */
 /* Separately handle the special case of Microsoft Visual Studio 2008 with x86_64-w64-mingw32-gcc */
