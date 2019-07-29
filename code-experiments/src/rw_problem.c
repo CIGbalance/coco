@@ -221,7 +221,7 @@ static rw_problem_data_t *get_rw_problem_data(const char *folder_name,
   data = (rw_problem_data_t *) coco_allocate_memory(sizeof(*data));
   data->path = coco_allocate_string(COCO_PATH_MAX + 1);
   memcpy(data->path, "", 1);
-  coco_join_path(data->path, COCO_PATH_MAX, dir1, dir1, dir2, folder_name, NULL);
+  coco_join_path(data->path, COCO_PATH_MAX, dir2, folder_name, NULL);
 
   data->var_fname = coco_allocate_string(COCO_PATH_MAX + 1);
   memcpy(data->var_fname, "", 1);
