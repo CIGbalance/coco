@@ -924,35 +924,39 @@ def build_socket_servers(force_download=False):
     build_rw_mario_gan_server(force_download=force_download, exclusive_evaluator=False)
 
 
-def run_toy_socket_server_c(port):
+def run_toy_socket_server_c(port, do_build=True):
     """Build and run the socket server with the toy socket evaluator in C"""
-    build_toy_socket_server_c()
+    if do_build:
+        build_toy_socket_server_c()
     _run_socket_server_c(port)
 
 
-def run_toy_socket_server_python(port):
+def run_toy_socket_server_python(port, do_build=True):
     """Build and run the socket server with the toy socket evaluator in Python"""
-    build_toy_socket_server_python()
+    if do_build:
+        build_toy_socket_server_python()
     _run_socket_server_python(port)
 
 
-def run_rw_top_trumps_server(port, force_download=False, batch=1):
-    """Build (if batch == 1) and run the socket server with the top trumps evaluator (in C)"""
-    if batch == 1:
-        # Only build the server for the first batch
+def run_rw_top_trumps_server(port, force_download=False, do_build=True):
+    """Build (if do_build) and run the socket server with the top trumps evaluator (in C)"""
+    if do_build:
+        # Only build the server when required
         build_rw_top_trumps_server(force_download=force_download, exclusive_evaluator=True)
     _run_socket_server_c(port)
 
 
-def run_rw_mario_gan_server(port, force_download=False):
+def run_rw_mario_gan_server(port, force_download=False, do_build=True):
     """Prepare and run the socket server with the mario gan evaluator (in Python)"""
-    build_rw_mario_gan_server(force_download=force_download, exclusive_evaluator=True)
+    if do_build:
+        build_rw_mario_gan_server(force_download=force_download, exclusive_evaluator=True)
     _run_socket_server_python(port)
 
 
-def run_socket_servers(force_download=False):
+def run_socket_servers(force_download=False, do_build=True):
     """Run socket servers in C and Python"""
-    build_socket_servers(force_download=force_download)
+    if do_build:
+        build_socket_servers(force_download=force_download)
     _run_socket_server_c(socket_server_port_c)
     _run_socket_server_python(socket_server_port_python)
 
@@ -999,11 +1003,38 @@ def _get_socket_port(suite_name, start_port, current_batch):
         raise ValueError('Suite {} not supported'.format(suite_name))
 
 
-def run_rw_experiment(package_install_option=[], force_download=False, args=[]):
-    """Run the real-world experiment with the given suite that uses sockets for evaluation
+def build_rw_experiment(package_install_option=[], force_download=False, args=[]):
+    """Builds the real-world experiment for the given suite that uses sockets for evaluation
     ('toy-socket' by default).
 
-    First run the socket server, then the real-world example experiment in Python and finally stop
+    This does not also run the experiment, see the run_rw_experiment function.
+    """
+    # These default should match those from rw_example_experiment.py
+    suite_name = 'toy-socket'
+    # Parse the arguments
+    for arg in args:
+        if arg[:6] == 'suite=':
+            suite_name = arg[6:]
+    # Build the right socket server for this suite
+    if 'toy-socket' in suite_name:
+        build_toy_socket_server_c()
+    elif 'rw-top-trumps' in suite_name:
+        build_rw_top_trumps_server(force_download=force_download)
+    elif 'rw-mario-gan' in suite_name:
+        build_rw_mario_gan_server(force_download=force_download)
+    else:
+        raise ValueError('Suite {} not supported'.format(suite_name))
+    # Build Python and run the real-world example experiment with the given arguments
+    # Build only for the first batch
+    build_python(package_install_option=package_install_option)
+
+
+def run_rw_experiment(args=[]):
+    """Runs the already built real-world experiment with the given suite that uses sockets for
+    evaluation ('toy-socket' by default).
+
+    This does not also build the experiment, build_rw_experiment needs to be ran beforehand.
+    First runs the socket server, then the real-world example experiment in Python and finally stops
     the socket server.
     """
     # These defaults should match those from rw_example_experiment.py
@@ -1021,21 +1052,17 @@ def run_rw_experiment(package_install_option=[], force_download=False, args=[]):
                 suite_name = arg[6:]
         # Get the right port for this suite
         port = _get_socket_port(suite_name, start_port, current_batch)
-        # Build and run the right socket server for this suite
+        # Run the right socket server for this suite
         if 'toy-socket' in suite_name:
-            run_toy_socket_server_c(port=port)
+            run_toy_socket_server_c(port=port, do_build=False)
         elif 'rw-top-trumps' in suite_name:
-            run_rw_top_trumps_server(port=port, force_download=force_download, batch=current_batch)
+            run_rw_top_trumps_server(port=port, do_build=False)
         elif 'rw-mario-gan' in suite_name:
-            run_rw_mario_gan_server(port=port, force_download=force_download)
+            run_rw_mario_gan_server(port=port, do_build=False)
         else:
             raise ValueError('Suite {} not supported'.format(suite_name))
-        # Build Python and run the real-world example experiment with the given arguments
-        # Build only for the first batch
-        if current_batch == 1:
-            build_python(package_install_option=package_install_option)
-        else:
-            time.sleep(3)  # Wait a few seconds for the servers to start
+        time.sleep(3)  # Wait a few seconds for the servers to start
+        # Run the real-world example experiment with the given arguments
         python(os.path.join('code-experiments', 'build', 'python'),
                ['rw_example_experiment.py'] + args)
     finally:
@@ -1236,6 +1263,7 @@ Available commands for users:
   build-rw-top-trumps-server     - Build the rw_top_trumps server (will download data if not yet present) 
   build-rw-mario-gan-server      - Build the rw_mario_gan server (will download data if not yet present) 
   build-socket-servers           - Build all the available servers (will download data if not yet present) 
+  build-rw-experiment            - Build the experiment with sockets (will download data if not yet present) 
 
   run-toy-socket-server-c        - Build and run the toy socket server in C
   run-toy-socket-server-python   - Build and run the toy socket server in Python
@@ -1243,7 +1271,7 @@ Available commands for users:
   run-rw-mario-gan-server        - Build and run the rw_mario_gan server (will download data if not yet present)  
   run-socket-servers             - Build and run all socket servers (will download data if not yet present) 
   stop-socket-servers            - Stop all running socket servers
-  run-rw-experiment              - Build and run the experiment with sockets (will download data if not yet present) 
+  run-rw-experiment              - Run the experiment with sockets 
 
 Available commands for developers:
 
@@ -1361,8 +1389,10 @@ def main(args):
     elif cmd == 'run-rw-mario-gan-server': run_rw_mario_gan_server(port=port, force_download=force_rw_download)
     elif cmd == 'run-socket-servers': run_socket_servers(force_download=force_rw_download)
     elif cmd == 'stop-socket-servers': stop_socket_servers(port=port)
-    elif cmd == 'run-rw-experiment': run_rw_experiment(package_install_option=package_install_option,
-                                                       force_download=force_rw_download, args=args[1:])
+    elif cmd == 'build-rw-experiment': build_rw_experiment(
+        package_install_option=package_install_option, force_download=force_rw_download,
+        args=args[1:])
+    elif cmd == 'run-rw-experiment': run_rw_experiment(args=args[1:])
     else: help()
 
 
