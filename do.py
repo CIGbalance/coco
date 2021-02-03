@@ -1317,7 +1317,7 @@ def main(args):
             batch = int(arg[6:])
     if cmd == 'build': build(package_install_option=package_install_option)
     elif cmd == 'run': run_all(package_install_option=package_install_option)
-    elif cmd == 'test': test(package_install_option=package_install_option)
+    elif cmd == 'test': test()
     elif cmd == 'build-c': build_c()
     elif cmd == 'build-java': build_java()
     elif cmd == 'build-matlab': build_matlab()
