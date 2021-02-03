@@ -33,28 +33,34 @@ Is the server running?"`
 
 To run the socket server (in C) for the `rw-top-trumps(-biobj)` suite, call 
 ```
-python do.py run-rw-top-trumps-server <port=N> <force-rw-download=0/1> <batch=K>
+python do.py run-rw-top-trumps-server <port=N> <force-rw-download=0/1> <skip-build>
 ```
 
 from COCO repository's root folder. 
 
 To run the socket server (in Python) for the `rw-mario-gan(-biobj)` suite, call 
 ```
-python do.py run-rw-mario-gan-server <port=N> <force-rw-download=0/1>
+python do.py run-rw-mario-gan-server <port=N> <force-rw-download=0/1> <skip-build>
 ```
 
 from COCO repository's root folder. 
 
 The port can be specified with `port=N`, but changing the default ports is generally not required. The 
 first time the servers are run, all the pertinent data is downloaded (which can take some time). 
-If you ever need to re-download the GBEA server data, set `force-rw-download=1`. The `batch=K` 
-argument is relevant only when the experiments are ran in batches (see Parallelization below) for 
-more information.  
+If you ever need to re-download the GBEA server data, set `force-rw-download=1`. The `skip-build` 
+argument is relevant when you want to parallelize your experiments (see Parallelization below for 
+more information). When running normally (and especially the first time), use the command without `skip-build`.
 
 You can continue working on the same console you used to run the socket server (you just might need
 to press `enter` first.)
 
-### Stop the GBEA socket servers
+While working, the socket server might reset (you will see messages like the one below). This is 
+expected behavior.
+```
+Socket server (Python) reset
+```
+
+### Stopping the GBEA socket servers
 
 All socket servers on default ports can be stopped at the same time by calling 
 ```
@@ -68,13 +74,25 @@ specifying the port.
 ### Parallelization
 
 If you want to execute experiments in parallel, you also need to run socket servers in parallel. 
-This is rather straightforward for the Mario GAN server - you can run as many servers as you want, 
-just make sure to assign them different ports. 
-
-To do the same for the Top Trumps server, you have to use different ports *and* different batch 
-numbers (see above the `<batch=K>` argument). The Top Trumps server is built from scratch only for
-the first batch, so you should always run the first batch before any other ones. 
-
+The socket server should only be built once, but can then be ran multiple times. To 
+achieve this, first build the socket server with either 
+```
+python do.py build-rw-top-trumps-server <force-rw-download=0/1>
+```
+or
+```
+python do.py build-rw-mario-gan-server <force-rw-download=0/1>
+```
+And then run the server with either 
+```
+python do.py run-rw-top-trumps-server port=N skip-build
+```
+or 
+```
+python do.py run-rw-mario-gan-server port=N skip-build
+```
+making sure that the port is different for each parallel run and the `skip-build` argument is 
+present. 
 
 ### Troubleshooting
 
@@ -96,13 +114,13 @@ indicated in its documentation.
 For example, to run the algorithm on the `rw-top-trumps(-biobj)` suite, you can either call
 ```
 python do.py run-rw-top-trumps-server
-python code-experiments/build/python/rw_example_experiment.py suite_name=rw-top-trumps
+python code-experiments/build/python/rw_example_experiment.py suite=rw-top-trumps
 python do.py stop-socket-servers
 ```
 
 or  simply 
 ```
-python do.py run-rw-experiment suite_name=rw-top-trumps
+python do.py run-rw-experiment suite=rw-top-trumps
 ```
 
 from COCO repository's root folder. The latter replaces the three commands above.
@@ -110,12 +128,13 @@ from COCO repository's root folder. The latter replaces the three commands above
 The results will be saved to the `code-experiments/build/python/exdata` folder.
 
 **Experiments in Python can be easily parallelized** by setting the number of total batches and the 
-current batch as follows (make sure that the first batch is called before the others)
+current batch as follows (note that the experiment needs to be built first)
 ```
-python do.py run-rw-experiment suite_name=rw-top-trumps batches=4 batch=1
-python do.py run-rw-experiment suite_name=rw-top-trumps batches=4 batch=2
-python do.py run-rw-experiment suite_name=rw-top-trumps batches=4 batch=3
-python do.py run-rw-experiment suite_name=rw-top-trumps batches=4 batch=4
+python do.py build-rw-experiment suite=rw-top-trumps
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=1 
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=2
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=3
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=4
 ```
 
 See the documentation in the `rw-example-experiment.py` file for 
