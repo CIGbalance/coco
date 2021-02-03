@@ -57,7 +57,7 @@ def parse_arguments(argv):
     suite_options = ''
     observer_name = 'bbob'
     observer_options = ''
-    budget_multiplier = 10
+    budget_multiplier = 2
     batches = 1
     # Parse the command line arguments
     for arg in argv[1:]:

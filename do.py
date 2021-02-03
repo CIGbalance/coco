@@ -19,6 +19,7 @@ import re
 import socket
 from multiprocessing import Process
 import time
+from distutils.util import strtobool
 
 
 ## Change to the root directory of repository and add our tools/
@@ -761,27 +762,34 @@ rw_evaluators = [rw_evaluator_top_trumps, rw_evaluator_mario_gan]
 def _set_external_evaluator(evaluate_string, new_value):
     """Set the external evaluator value in all the files required for compiling external
     evaluators (C source files and make files)"""
-    def replace_in_file(file_name):
-        """Performs the replacement for the given file_name"""
+    def replace_in_file(file_name_in, file_name_out):
+        """Replaces strings in file_name_out if such a file exists. If not, it creates is by copying
+         from file_name_in and replacing its strings."""
         find_strings = ['{}{}{}'.format(prepend, evaluate_string, append) for prepend, append in
                         zip(['#define ', ''], [' \\d+', ' = \\d+'])]
         replace_strings = ['{}{}{}'.format(prepend, evaluate_string, append) for prepend, append in
                            zip(['#define ', ''], [' {}'.format(new_value),
                                                   ' = {}'.format(new_value)])]
-        with open(file_name) as f:
+        if os.path.exists(file_name_out):
+            file_name_in = file_name_out
+        with open(file_name_in) as f:
             s = f.read()
             for find_string, replace_string in zip(find_strings, replace_strings):
                 found = re.findall(find_string, s)
                 if _build_verbosity and len(found) > 0 and replace_string not in found:
-                    print('REPLACE {} with {} in {}'.format(found, replace_string, file_name))
+                    print('REPLACE {} with {} (in {})'.format(found, replace_string, file_name_in))
                 s = re.sub(find_string, replace_string, s)
-        with open(file_name, 'w') as f:
+        with open(file_name_out, 'w') as f:
             f.write(s)
 
-    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'socket_server.c'))
-    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'Makefile.in'))
-    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'Makefile_win_gcc.in'))
-    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'socket_server.py'))
+    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'socket_server.in.c'),
+                    os.path.join('code-experiments', 'rw-problems', 'socket_server.c'))
+    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'Makefile.in2'),
+                    os.path.join('code-experiments', 'rw-problems', 'Makefile.in'))
+    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'Makefile_win_gcc.in2'),
+                    os.path.join('code-experiments', 'rw-problems', 'Makefile_win_gcc.in'))
+    replace_in_file(os.path.join('code-experiments', 'rw-problems', 'socket_server.in.py'),
+                    os.path.join('code-experiments', 'rw-problems', 'socket_server.py'))
 
 
 def _download_external_evaluator(name, url_name, force_download=False):
@@ -924,21 +932,21 @@ def build_socket_servers(force_download=False):
     build_rw_mario_gan_server(force_download=force_download, exclusive_evaluator=False)
 
 
-def run_toy_socket_server_c(port, do_build=True):
+def run_toy_socket_server_c(port, do_build=False):
     """Build and run the socket server with the toy socket evaluator in C"""
     if do_build:
         build_toy_socket_server_c()
     _run_socket_server_c(port)
 
 
-def run_toy_socket_server_python(port, do_build=True):
+def run_toy_socket_server_python(port, do_build=False):
     """Build and run the socket server with the toy socket evaluator in Python"""
     if do_build:
         build_toy_socket_server_python()
     _run_socket_server_python(port)
 
 
-def run_rw_top_trumps_server(port, force_download=False, do_build=True):
+def run_rw_top_trumps_server(port, force_download=False, do_build=False):
     """Build (if do_build) and run the socket server with the top trumps evaluator (in C)"""
     if do_build:
         # Only build the server when required
@@ -946,14 +954,14 @@ def run_rw_top_trumps_server(port, force_download=False, do_build=True):
     _run_socket_server_c(port)
 
 
-def run_rw_mario_gan_server(port, force_download=False, do_build=True):
+def run_rw_mario_gan_server(port, force_download=False, do_build=False):
     """Prepare and run the socket server with the mario gan evaluator (in Python)"""
     if do_build:
         build_rw_mario_gan_server(force_download=force_download, exclusive_evaluator=True)
     _run_socket_server_python(port)
 
 
-def run_socket_servers(force_download=False, do_build=True):
+def run_socket_servers(force_download=False, do_build=False):
     """Run socket servers in C and Python"""
     if do_build:
         build_socket_servers(force_download=force_download)
@@ -984,9 +992,6 @@ def stop_socket_servers(port):
     ports = [int(port)] if port else socket_server_ports
     for p in ports:
         _stop_socket_server(p)
-    # Reset the changes in the files regarding available external evaluators
-    for rw_evaluator in rw_evaluators:
-        _set_external_evaluator(rw_evaluator, 0)
 
 
 def _get_socket_port(suite_name, start_port, current_batch):
@@ -1329,7 +1334,7 @@ def main(args):
     package_install_option = []
     port = None
     force_rw_download = False  # Whether to force download of the data of the real-world problems
-    batch = 1
+    rw_skip_build = False  # Whether to skip building real-world problem servers when running them
     for arg in args[1:]:
         if arg == 'and-test':
             also_test_python = True
@@ -1340,9 +1345,9 @@ def main(args):
         elif arg[:5] == 'port=':
             port = int(arg[5:])
         elif arg[:18] == 'force-rw-download=':
-            force_rw_download = bool(arg[18:])
-        elif arg[:6] == 'batch=':
-            batch = int(arg[6:])
+            force_rw_download = strtobool(arg[18:])
+        elif arg == 'skip-build':
+            rw_skip_build = True
     if cmd == 'build': build(package_install_option=package_install_option)
     elif cmd == 'run': run_all(package_install_option=package_install_option)
     elif cmd == 'test': test()
@@ -1383,11 +1388,11 @@ def main(args):
     elif cmd == 'build-rw-top-trumps-server': build_rw_top_trumps_server(force_download=force_rw_download)
     elif cmd == 'build-rw-mario-gan-server': build_rw_mario_gan_server(force_download=force_rw_download)
     elif cmd == 'build-socket-servers': build_socket_servers(force_download=force_rw_download)
-    elif cmd == 'run-toy-socket-server-c': run_toy_socket_server_c(port=port)
-    elif cmd == 'run-toy-socket-server-python': run_toy_socket_server_python(port=port)
-    elif cmd == 'run-rw-top-trumps-server': run_rw_top_trumps_server(port=port, force_download=force_rw_download, batch=batch)
-    elif cmd == 'run-rw-mario-gan-server': run_rw_mario_gan_server(port=port, force_download=force_rw_download)
-    elif cmd == 'run-socket-servers': run_socket_servers(force_download=force_rw_download)
+    elif cmd == 'run-toy-socket-server-c': run_toy_socket_server_c(port=port, do_build=not rw_skip_build)
+    elif cmd == 'run-toy-socket-server-python': run_toy_socket_server_python(port=port, do_build=not rw_skip_build)
+    elif cmd == 'run-rw-top-trumps-server': run_rw_top_trumps_server(port=port, force_download=force_rw_download, do_build=not rw_skip_build)
+    elif cmd == 'run-rw-mario-gan-server': run_rw_mario_gan_server(port=port, force_download=force_rw_download, do_build=not rw_skip_build)
+    elif cmd == 'run-socket-servers': run_socket_servers(force_download=force_rw_download, do_build=not rw_skip_build)
     elif cmd == 'stop-socket-servers': stop_socket_servers(port=port)
     elif cmd == 'build-rw-experiment': build_rw_experiment(
         package_install_option=package_install_option, force_download=force_rw_download,
