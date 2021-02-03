@@ -1100,6 +1100,7 @@ def verify_postprocessing(package_install_option=[]):
 ## Pre-processing
 def install_preprocessing(package_install_option=[]):
     global RELEASE
+    install_postprocessing(package_install_option=package_install_option)
     expand_file(join('code-preprocessing/archive-update', 'setup.py.in'),
                 join('code-preprocessing/archive-update', 'setup.py'),
                 {'COCO_VERSION': git_version(pep440=True)})
@@ -1283,8 +1284,8 @@ NOTE: These commands install Python packages to the global site packages by
       by default. This behavior can be modified by providing one of the
       following arguments.
   
-       install-user       - Installs under the user directory
-       install-home=<dir> - Installs under the specified home directory
+       --user OR install-user              - (recommended) installs under the user directory
+       --home=<dir> OR install-home=<dir>  - Installs under the specified home directory
 
 To build a release version which does not include debugging information in the
 amalgamations set the environment variable COCO_RELEASE to 'true'.
@@ -1306,8 +1307,8 @@ def main(args):
             also_test_python = True
         elif arg in ('install-user', '--user'):
             package_install_option = ['--user']
-        elif arg[:13] == 'install-home=':
-            package_install_option = ['--home=' + arg[13:]]
+        elif arg.startswith(('install-home=', '--home=')):
+            package_install_option = ['--home=' + arg.split('=', 1)[1]]
         elif arg[:5] == 'port=':
             port = int(arg[5:])
         elif arg[:18] == 'force-rw-download=':
@@ -1316,7 +1317,7 @@ def main(args):
             batch = int(arg[6:])
     if cmd == 'build': build(package_install_option=package_install_option)
     elif cmd == 'run': run_all(package_install_option=package_install_option)
-    elif cmd == 'test': test()
+    elif cmd == 'test': test(package_install_option=package_install_option)
     elif cmd == 'build-c': build_c()
     elif cmd == 'build-java': build_java()
     elif cmd == 'build-matlab': build_matlab()

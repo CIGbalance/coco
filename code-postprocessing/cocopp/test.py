@@ -139,7 +139,7 @@ def retrieve_algorithm(data_path, folder_name, algorithm_name, file_name=None):
     replaced by `cocopp.archiving.get` or `cocopp.archiving.official_archives` or `cocopp.archives.all`)"""
     algorithm_file = join_path(data_path, file_name if file_name else algorithm_name)
     if not os.path.exists(algorithm_file):
-        data_url = 'http://coco.gforge.inria.fr/data-archive/%s/%s' % (folder_name, algorithm_name)
+        data_url = 'https://coco.gforge.inria.fr/data-archive/%s/%s' % (folder_name, algorithm_name)
         urlretrieve(data_url, algorithm_file)
 
 
@@ -249,6 +249,7 @@ def main(arguments):
 
     # old_data_path = ' ' + prepare_data(run_all_tests)
 
+
     command = ' cocopp --no-svg --settings=grayscale '  # TODO: grayscale has to go
 
     #copy_latex_templates()
@@ -284,6 +285,7 @@ def main(arguments):
                         'BFGS_ros_noiseless.tgz'])
         t0 = time.time()
         print(time.asctime())
+
         with InfolderGoneWithTheWind():
             result = os.system(python + command + data_paths)
         print('**  subtest 3 finished in ', time.time() - t0, ' seconds')
@@ -415,6 +417,11 @@ def main(arguments):
             print('**  subtest 18 finished in ', time.time() - t0, ' seconds')
             assert result == 0, 'Test failed: rungeneric on data from `bbob-biobj` and `bbob-biobj-ext` suite.'
 
+        with InfolderGoneWithTheWind():
+            t0 = time.time()
+            result = os.system("""python -c "import cocopp; cocopp.main('slsqp!'); cocopp.main('abc*')" """)
+            print('**  subtest 19 finished in ', time.time() - t0, ' seconds')
+            assert result == 0, 'Test failed: running postprocessing twice within same python session'
 
     print('launching doctest (it might be necessary to close a few pop up windows to finish)')
     t0 = time.time()

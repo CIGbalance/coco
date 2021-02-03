@@ -7,7 +7,7 @@ cimport numpy as np
 
 from cocoex.exceptions import InvalidProblemException, NoSuchProblemException, NoSuchSuiteException
 
-known_suite_names = ["bbob", "bbob-biobj", "bbob-largescale",
+known_suite_names = ["bbob", "bbob-biobj", "bbob-largescale", "bbob-biobj-ext",
                      "bbob-mixint", "bbob-biobj-mixint", "toy-socket", "toy-socket-biobj",
                      "rw-top-trumps", "rw-top-trumps-biobj", "rw-mario-gan", "rw-mario-gan-biobj"]
 _known_suite_names = ["bbob", "bbob-biobj", "bbob-biobj-ext", "bbob-constrained", "bbob-largescale",

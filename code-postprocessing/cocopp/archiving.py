@@ -83,7 +83,7 @@ try:
 except ImportError:
     from urllib import urlretrieve as _urlretrieve
 
-coco_url = "http://coco.gforge.inria.fr"
+coco_url = "https://coco.gforge.inria.fr"
 cocopp_home = os.path.abspath(os.path.expanduser(os.path.join("~", ".cocopp")))
 cocopp_home_archives = os.path.join(cocopp_home, "data-archives")
 default_archive_location = os.path.join(cocopp_home, 'data-archives')
@@ -263,7 +263,7 @@ def _get_remote(url, target_folder=None, redownload=False):
             "or use the `update` method to re-download the remote definition file."
             % (_definition_file_to_read(target_folder), url))
         arch.remote_data_path = url
-    assert arch.remote_data_path == url  # check that url was in the definition file
+    assert arch.remote_data_path.replace('https', 'http') == url.replace('https', 'http')  # check that url was in the definition file
     return arch
 
 def get(url_or_folder=None):
@@ -1300,7 +1300,7 @@ class OfficialArchives(object):
         """Allow to use a new official archive.
         
         The archive must exist as a subfolder of
-        http://coco.gforge.inria.fr/data-archive
+        https://coco.gforge.inria.fr/data-archive
         """
         self._list += [(self._base + name, None),]
         self.set_as_attributes_in()
@@ -1311,16 +1311,33 @@ class OfficialArchives(object):
         
         `target` is by default `self`.
         
-        Details: This method can only be called when the class names and the module
-        attribute `official_archives: OfficialArchive` (used in `get`) are
-        available. Depending on the implementation of `get`, it may download the
-        definition files on its first-ever call by/on any given user/machine.
+        Details: This method can only be called when the class names and
+        the module attribute `official_archives: OfficialArchive` (used in
+        `get`) are available. It creates new instances of the archives.
+        Depending on the implementation of `get`, it may download the
+        definition files on its first-ever call by/on any given
+        user/machine.
         """
         for name in self.names:
             if name not in except_for:
                 setattr(target or self, name.replace('-', '_'),
                         get(name).update() if update else get(name))
         return self
+
+    def link_as_attributes_in(self, target, except_for=('test',),
+                              update=False):
+        """Assign all archives as attribute of `target` except for ``'test'``.
+        
+        `target` is by default `self`.
+        
+        Details: This method can only be called when the class names and the module
+        attribute `official_archives: OfficialArchive` (used in `get`) are
+        available. It only creates links to the existing archives.
+        """
+        for name in self.names:
+            if name not in except_for:
+                name = name.replace('-', '_')
+                setattr(target, name, getattr(self, name))
 
     @property
     def names(self):
@@ -1351,7 +1368,14 @@ class OfficialArchives(object):
         return self._get(name, 1) or COCODataArchive
 
     def update_all(self):
-        self.set_as_attributes_in(update=True) 
+        # self.set_as_attributes_in(update=True)
+        for name in self.names:
+            name = name.replace('-', '_')
+            try:
+                getattr(self, name).update()
+            except AttributeError:
+                if name != 'test':
+                    raise
 
 official_archives = OfficialArchives()
 # TODO-decide: when should we (try to) update these?

@@ -38,11 +38,12 @@ static coco_suite_t *suite_biobj_initialize(const char *suite_name) {
 
   coco_suite_t *suite;
   const size_t dimensions[] = { 2, 3, 5, 10, 20, 40 };
+  const size_t num_dimensions = sizeof(dimensions) / sizeof(dimensions[0]);
 
   if (strcmp(suite_name, "bbob-biobj") == 0) {
-    suite = coco_suite_allocate("bbob-biobj", 55, 6, dimensions, "instances: 1-15", 1);
+    suite = coco_suite_allocate("bbob-biobj", 55, num_dimensions, dimensions, "instances: 1-15", 1);
   } else if (strcmp(suite_name, "bbob-biobj-ext") == 0) {
-    suite = coco_suite_allocate("bbob-biobj-ext", 55+37, 6, dimensions, "instances: 1-15", 1);
+    suite = coco_suite_allocate("bbob-biobj-ext", 55+37, num_dimensions, dimensions, "instances: 1-15", 1);
   } else {
     coco_error("suite_biobj_initialize(): unknown problem suite");
     return NULL;

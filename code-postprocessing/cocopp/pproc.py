@@ -545,7 +545,7 @@ class DataSet(object):
     data of a row is aligned, the :py:data:`N` subsequent columns are
     either the numbers of function evaluations for :py:attr:`evals` or
     function values for :py:attr:`funvals`.
-    
+
     A short example::
 
         >>> from __future__ import print_function    
@@ -719,7 +719,7 @@ class DataSet(object):
         >>> cocopp.testbedsettings.GECCOBBOBTestbed.settings['instancesOfInterest'] = None
         >>> cocopp.config.config('bbob') # make sure that settings are used
 
-    """
+"""
 
     # TODO: unit element of the post-processing: one algorithm, one problem
     # TODO: if this class was to evolve, how do we make previous data
@@ -768,15 +768,10 @@ class DataSet(object):
             else:
                 # detect by hand whether we are in the noisy or the
                 # noiseless case (TODO: is there a better way?)
-                if self.funcId > 100:
-                    genericsettings.isNoisy = True
-                    genericsettings.isNoiseless = False
+                if getattr(self, 'funcId') > 100:  # getattr prevents lint error
                     suite = testbedsettings.default_suite_single_noisy
                 else:
-                    genericsettings.isNoisy = False
-                    genericsettings.isNoiseless = True
                     suite = testbedsettings.default_suite_single
-
         return suite
 
     def __init__(self, header, comment, data, indexfile):
@@ -795,9 +790,12 @@ class DataSet(object):
         # Extract information from the header line.
         self._extra_attr = []
         self.__parseHeader(header)
+        try: _algId = self.algId
+        except: _algId = None
         # In biobjective case we have some header info in the data line.
-        self.__parseHeader(data) 
-
+        self.__parseHeader(data)
+        if _algId and _algId != self.algId:
+            warnings.warn("data overwrote header algId %s --> %s" % (_algId, self.algId))
         # Read in second line of entry (comment line). The information
         # is only stored if the line starts with "%", else it is ignored.
         if comment.startswith('%'):
@@ -1124,12 +1122,15 @@ class DataSet(object):
 
     def evals_with_simulated_restarts(self,
             targets,
-            samplesize=genericsettings.simulated_runlength_bootstrap_sample_size,
+            samplesize=None,
             randintfirst=toolsstats.randint_derandomized,
             randintrest=toolsstats.randint_derandomized,
             bootstrap=False):
         """Return a len(targets) list of ``samplesize`` "simulated" run
-        lengths (#evaluations, sorted).
+        lengths (#evaluations, sorted) with a similar interface as `detEvals`.
+
+        `samplesize` is by default the smallest multiple of `nbRuns` that
+        is larger than 14.
 
         ``np.sort(np.concatenate(return_value))`` provides the combined
         sorted ECDF data over all targets which may be plotted with
@@ -1145,6 +1146,8 @@ class DataSet(object):
         TODO: change this: To get a bootstrap sample for estimating dispersion use
         ``min_samplesize=0, randint=np.random.randint``.
 
+        TODO: how is the sample size propagated to the bootstrapping?
+
         Details:
 
         - For targets where all runs were successful, samplesize=nbRuns()
@@ -1156,20 +1159,24 @@ class DataSet(object):
 
         TODO: if `samplesize` >> `nbRuns` and nsuccesses is large,
         the data representation becomes somewhat inefficient.
-
-        TODO: it may be useful to make the samplesize dependent on the
-        number of successes and supply the multipliers
-        max(samplesizes) / samplesizes.
-        """
+    """
         try: targets = targets([self.funcId, self.dim])
         except TypeError: pass
+        if samplesize is None:  # default sampling is derandomized, hence no need for a huge number
+            samplesize = 0
+            while samplesize < 15:
+                samplesize += self.nbRuns()
         res = []  # res[i] is a list of samplesize evals
         for evals in self.detEvals(targets, bootstrap=bootstrap):
             # prepare evals array
             evals.sort()
             indices = np.isfinite(evals)
-            if not sum(indices):  # no successes
+            nsucc = sum(indices)
+            if nsucc == 0:  # no successes
                 res += [samplesize * [np.nan]]  # TODO: this is "many" data with little information
+                continue
+            elif nsucc == len(evals) and not bootstrap:
+                res += [sorted(evals[randintfirst(0, len(evals), samplesize)])]
                 continue
             nindices = ~indices
             assert sum(indices) + sum(nindices) == len(evals)
@@ -1177,14 +1184,10 @@ class DataSet(object):
             # let the first nsucc data in evals be those from successful runs
             evals = np.hstack([evals[indices], evals[nindices]])
             assert sum(np.isfinite(evals)) == len(evals)
-            nsucc = sum(indices)
 
             # do the job
             indices = randintfirst(0, len(evals), samplesize)
             sums = evals[indices]
-            if nsucc == len(evals):
-                res += [sorted(sums)]
-                continue
             failing = np.where(indices >= nsucc)[0]
             assert nsucc > 0  # prevent infinite loop
             while len(failing):  # add "restarts"
@@ -1769,16 +1772,21 @@ class DataSetList(list):
             print('try calling DataSetList() with option ' +
                   '``check_data_type=False``')
         fnames = []
+        alg_names = []
         for name in args:
             if isinstance(name, string_types) and findfiles.is_recognized_repository_filetype(name):
+                # the found names may not at all reflect name anymore
                 fnames.extend(findfiles.main(name))
             else:
                 fnames.append(name)
-        for name in fnames: 
+            alg_names.extend((len(fnames) - len(alg_names)) * [name])
+        assert len(fnames) == len(alg_names)
+        for name, alg_name in zip(fnames, alg_names): 
             if isinstance(name, DataSet):
                 self.append(name)
+                # we could check here whether name.algId and alg_name are similar or consistent
             elif name.endswith('.info'):
-                self.processIndexFile(name)
+                self.processIndexFile(name, alg_name)
             elif name.endswith('.pickle') or name.endswith('.pickle.gz'):
                 try:
                     # cocofy(name)
@@ -1810,7 +1818,7 @@ class DataSetList(list):
                               'containing .info file(s).')
                 warnings.warn(s)
                 print(s)
-            self.sort()
+        self.sort()
         self.current_testbed = testbedsettings.current_testbed #Wassim: to be sure
         data_consistent = True
         for ds in self:
@@ -1818,11 +1826,29 @@ class DataSetList(list):
         if len(self) and data_consistent:
             print("  Data consistent according to consistency_check() in pproc.DataSet")
             
-    def processIndexFile(self, indexFile):
+    def processIndexFile(self, indexFile, alg_name=None):
         """Reads in an index (.info?) file information on the different runs."""
 
+        if alg_name.endswith('.info'):
+            alg_name = None
+        elif alg_name is not None:
+            # algId from data files is usually not set properly, so here we overwrite
+            # algId with the input alg_name which is usually the folder name (as for archives)
+            # Assuming all future archive entries are clean, we could check here
+            # whether alg_name is in the official archive and then not overwrite
+            # algId. To check whether alg_name is in the archive is not entirely
+            # trivial, e.g., ``archiving.official_archives.all.find(alg_name)``
+            # will give too many false positives.
+            # Also, making exception is usually a bad thing. So we should better
+            # rename the zip files to give the standards we want.
+
+            alg_name = toolsdivers.strip_pathname1(alg_name)
+            if archiving.official_archives.bbob.find(alg_name):
+                alg_name = alg_name.replace('noiseless', '').rstrip('_').rstrip()
+            if 11 < 3:  # would break searching of algId in archives
+                alg_name = toolsdivers.str_to_latex(alg_name)  # not really necessary but ' ' seems nicer than '_'
         try:
-            f = openfile(indexFile)
+            f = openfile(indexFile, errors='replace')  # strange chars in names may cause errors
             if genericsettings.verbose:
                 print('Processing %s.' % indexFile)
 
@@ -1849,7 +1875,9 @@ class DataSetList(list):
                     data_file_names.append(data)
                     nbLine += 3
                     #TODO: check that something is not wrong with the 3 lines.
-                    ds = DataSet(header, comment, data, indexFile)                    
+                    ds = DataSet(header, comment, data, indexFile)
+                    if alg_name is not None:
+                        ds.algId = alg_name
                     if len(ds.instancenumbers) > 0:                    
                         self.append(ds)
                 except StopIteration:
@@ -2663,7 +2691,7 @@ def parseinfo(s):
                 elem1 = ast.literal_eval(elem1.strip())  # can be default anyway?
             else:
                 raise
-        res.append((elem0, elem1))  # TODO: what are elem0 and elem1?
+        res.append((elem0, elem1))  # DataSet attribute name and value
     return res
 
 
@@ -2747,12 +2775,17 @@ def process_arguments(args, current_hash, dictAlg, dsList, sortedAlgs):
         if alg == '':  # might cure an lf+cr problem when using cywin under Windows
             continue
         if findfiles.is_recognized_repository_filetype(alg):
-            filelist = findfiles.main(alg)
-            # Do here any sorting or filtering necessary.
-            # filelist = list(i for i in filelist if i.count('ppdata_f005'))
-            tmpDsList = DataSetList(filelist)
+            if 11 < 3:
+                filelist = findfiles.main(alg)  # this destroys name information
+                tmpDsList = DataSetList(filelist)  # DataSetList calls findfiles.main anyway
+                # Do here any sorting or filtering necessary.
+                # filelist = list(i for i in filelist if i.count('ppdata_f005'))
+            else:
+                tmpDsList = DataSetList(alg)
             for ds in tmpDsList:
                 ds._data_folder = alg
+                # to restore name information:
+                # ds.algId = toolsdivers.str_to_latex(toolsdivers.strip_pathname1(alg))
             # Nota: findfiles will find all info AND pickle files in folder alg.
             # No problem should arise if the info and pickle files have
             # redundant information. Only, the process could be more efficient

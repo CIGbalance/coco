@@ -67,7 +67,7 @@ def get_table_caption():
                                                                             testbedsettings.suite_name_tt_bi,
                                                                             testbedsettings.suite_name_mg_bi))
                            else "") + r"""Best results are printed in bold.
-        """ + r"""\cocoversion""")
+        """)
 
     table_caption = None
     if testbedsettings.current_testbed.name in [testbedsettings.suite_name_bi_ext,
@@ -725,7 +725,7 @@ def main(dict_alg, sorted_algs, output_dir='.', function_targets_line=True, late
     if len(additional_commands) > 0:
         for command in additional_commands:
             prepend_to_file(latex_commands_file, [command])
-    if len(tables_header) > 0 and df[0] == testbedsettings.current_testbed.tabDimsOfInterest[0]:
+    if len(tables_header) > 0 and df[0] == min(df):
         extraeol = [r'\hline']
         res = tableXLaTeX([tables_header], spec=spec, extra_eol=extraeol, add_end_tabular=False)
         prepend_to_file(latex_commands_file, ['\\providecommand{\\pptablesheader}{', res, '}'])
