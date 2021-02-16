@@ -314,7 +314,7 @@ our issue tracker at https://github.com/numbbo/coco/issues.
        problems to showcase socket communication
 
 * code-experiments/rw-problems contains the socket communication servers, the two toy
-  socket suites and other real-world suites (downloaded when first used)
+  socket suites and other real-world suites (downloaded when first used), see [Socket communication readme](./code-experiments/rw-problems/README.md) and [GBEA suites readme](./code-experiments/rw-problems/GBEA.md) for more information 
 
 * code-experiments/tools are a few meta-tools, mainly the amalgamate.py to merge all
   the C code into one file
@@ -650,9 +650,9 @@ Links and Documentation <a name="Links"></a>
     https://hal.inria.fr/hal-02067932/document and to
     http://coco.gforge.inria.fr/preliminary-bbob-mixint-documentation/bbob-mixint-doc.pdf
   - for the **`rw-mario-gan`** and **`rw-mario-gan-biobj`** suites we refer to 
-    http://www.gm.fh-koeln.de/~naujoks/gbea/gamesbench_doc.html#mariogan)
+    [mario-gan documentation](http://www.gm.fh-koeln.de/~naujoks/gbea/gamesbench_doc.html#mariogan) as well as [GBEA suites readme](./code-experiments/rw-problems/GBEA.md)
   - for the **`rw-top-trumps`** and **`rw-top-trumps-biobj`** suites we refer to 
-    http://www.gm.fh-koeln.de/~naujoks/gbea/gamesbench_doc.html#toptrumps
+    [top-trumps documentation](http://www.gm.fh-koeln.de/~naujoks/gbea/gamesbench_doc.html#toptrumps) as well as [GBEA suites readme](./code-experiments/rw-problems/GBEA.md)
   - for the **`toy-socket`** and **`toy-socket-biobj`** problem suites see their 
     [short description](./code-experiments/rw-problems/toy_socket/README.md) as well as
     [information about evaluation using sockets](./code-experiments/rw-problems/README.md)   
