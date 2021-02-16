@@ -31,14 +31,14 @@ Is the server running?"`
 
 ### Running the GBEA socket servers
 
-To run the socket server (in C) for the `rw-top-trumps(-biobj)` suite, call 
+To run the socket server for the `rw-top-trumps(-biobj)` suite, call 
 ```
 python do.py run-rw-top-trumps-server <port=N> <force-rw-download=0/1> <skip-build>
 ```
 
 from COCO repository's root folder. 
 
-To run the socket server (in Python) for the `rw-mario-gan(-biobj)` suite, call 
+To run the socket server for the `rw-mario-gan(-biobj)` suite, call 
 ```
 python do.py run-rw-mario-gan-server <port=N> <force-rw-download=0/1> <skip-build>
 ```
