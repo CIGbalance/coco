@@ -798,6 +798,9 @@ def _download_external_evaluator(name, url_name, force_download=False):
     in the same destination folder"""
     import urllib.request
     import zipfile
+    # Uncomment these two lines in case of a CERTIFICATE_VERIFY_FAILED error
+    # import ssl
+    # ssl._create_default_https_context = ssl._create_unverified_context
     data_exists = os.path.isdir(os.path.join('code-experiments', 'rw-problems', name))
     if not data_exists or force_download:
         if data_exists:

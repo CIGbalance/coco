@@ -96,13 +96,30 @@ present.
 
 ### Troubleshooting
 
+#### Reusing sockets
+
 If the server is stopped after being run, everything should be fine and you should be able to reuse
 the same port immediately. However, on some computers (notably Linux ones), the socket is still busy 
 for a while longer and cannot be immediately reused. If you can afford to wait a minute, do so. 
-Otherwise, you can specify a different (still available) port when running the socker server. 
+Otherwise, you can specify a different (still available) port when running the socket server. 
 
 Running a socket server on a port that is already being used by another socket server will fail with 
 a `"Bind failed"` error. Stop the socket on that port and try again.
+
+#### Downloading suite data
+
+On first use, the data of GBEA suites needs to be downloaded. This is done using the `urllib` library 
+and can cause issues on macOS if the certificates are not installed. The error looks something like 
+this:
+````
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1056)
+````
+One way to solve this issue is to install the certificates, another is remove the comments sign from 
+the following two lines in `do.py`:
+````
+# import ssl
+# ssl._create_default_https_context = ssl._create_unverified_context
+````
 
 ## Running an experiment in Python
 
