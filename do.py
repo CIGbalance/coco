@@ -777,7 +777,7 @@ def _set_external_evaluator(evaluate_string, new_value):
             for find_string, replace_string in zip(find_strings, replace_strings):
                 found = re.findall(find_string, s)
                 if _build_verbosity and len(found) > 0 and replace_string not in found:
-                    print('REPLACE {} with {} (in {})'.format(found, replace_string, file_name_in))
+                    print('REPLACING {} with {} (in {})'.format(found, replace_string, file_name_in))
                 s = re.sub(find_string, replace_string, s)
         with open(file_name_out, 'w') as f:
             f.write(s)
