@@ -1,5 +1,8 @@
 # Using socket communication for external evaluation 
 
+| To get started with the GBEA suites, see [GBEA readme](GBEA.md) |
+|-----------------------------------------------------------------|
+
 Socket communication between COCO and an external evaluator can be used to ease inclusion 
 of new suites of problems into COCO, for example, those that implement real-world problems. 
 Socket communication is demonstrated on the example of two test suites, `toy-socket` and 

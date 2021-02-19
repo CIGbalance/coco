@@ -8,6 +8,9 @@ numbbo/coco: Comparing Continuous Optimizers
 > Nikolaus Hansen, Dimo Brockhoff, Olaf Mersmann, Tea Tusar, Dejan Tusar, Ouassim Ait ElHara, Phillipe R. Sampaio, Asma Atamna, Konstantinos Varelas, Umut Batu, Duc Manh Nguyen, Filip Matzner, Anne Auger. COmparing Continuous Optimizers: numbbo/COCO on Github. Zenodo, [DOI:10.5281/zenodo.2594848](https://doi.org/10.5281/zenodo.2594848), March 2019.
 ---
 
+| To get started with the GBEA suites, see [GBEA readme](./code-experiments/rw-problems/GBEA.md) |
+|------------------------------------------------------------------------------------------------|
+
 [This code](https://github.com/numbbo/coco) provides a platform to
 benchmark and compare continuous optimizers, AKA non-linear solvers
 for numerical optimization. It is fully written in `ANSI C` and
