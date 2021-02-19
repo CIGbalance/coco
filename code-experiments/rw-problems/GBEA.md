@@ -15,11 +15,25 @@ the details on running your algorithms on these suites in one of the four COCO-s
 
 ## Preparation
 
-First download and install COCO following the instructions given [here](https://github.com/ttusar/coco/tree/gbea)
-(note that the GBEA branch needs to be installed, do not change to the master branch).
+First download and install COCO following the instructions given [here](https://github.com/ttusar/coco-gbea).
 
 While the GBEA suites are not included in COCO directly, they are automatically downloaded and 
 compiled the first time you want to use them, so you don't need to handle them separately. 
+
+### Quick test
+
+To make sure that the GBEA suites are working on your system, perform the following test that will 
+run random search on a small set of the available GBEA functions. Make the following calls from 
+COCO repository's root folder: 
+```
+python do.py run-rw-experiment suite=rw-top-trumps budget_multiplier=0.2 suite_options="dimensions: 88 function_indices: 1,3 instance_indices: 1"
+python do.py run-rw-experiment suite=rw-mario-gan budget_multiplier=0.5 suite_options="dimensions: 10 function_indices: 1,11 instance_indices: 1"
+```
+
+The tests should be completed in a few minutes. Their results will be saved to the 
+`code-experiments/build/python/exdata` folder.
+
+### Socket communication
 
 Solution evaluations for these four suites is done through socket communication (see [here](README.md) 
 for more information). COCO serves as a client sending solutions to the socket server, which makes 
@@ -33,23 +47,23 @@ Is the server running?"`
 
 To run the socket server for the `rw-top-trumps(-biobj)` suite, call 
 ```
-python do.py run-rw-top-trumps-server <port=N> <force-rw-download=0/1> <skip-build>
+python do.py run-rw-top-trumps-server <port=N> <force-rw-download=0/1> <build=0/1>
 ```
 
 from COCO repository's root folder. 
 
 To run the socket server for the `rw-mario-gan(-biobj)` suite, call 
 ```
-python do.py run-rw-mario-gan-server <port=N> <force-rw-download=0/1> <skip-build>
+python do.py run-rw-mario-gan-server <port=N> <force-rw-download=0/1> <build=0/1>
 ```
 
 from COCO repository's root folder. 
 
 The port can be specified with `port=N`, but changing the default ports is generally not required. The 
 first time the servers are run, all the pertinent data is downloaded (which can take some time). 
-If you ever need to re-download the GBEA server data, set `force-rw-download=1`. The `skip-build` 
+If you ever need to re-download the GBEA server data, set `force-rw-download=1`. The `build` 
 argument is relevant when you want to parallelize your experiments (see Parallelization below for 
-more information). When running normally (and especially the first time), use the command without `skip-build`.
+more information). By default, the servers are always built first (`build=1` by default).
 
 You can continue working on the same console you used to run the socket server (you just might need
 to press `enter` first.)
@@ -75,24 +89,16 @@ specifying the port.
 
 If you want to execute experiments in parallel, you also need to run socket servers in parallel. 
 The socket server should only be built once, but can then be ran multiple times. To 
-achieve this, first build the socket server with either 
+run the socket servers without (re)building them, use `build=0`.  
 ```
-python do.py build-rw-top-trumps-server <force-rw-download=0/1>
-```
-or
-```
-python do.py build-rw-mario-gan-server <force-rw-download=0/1>
-```
-And then run the server with either 
-```
-python do.py run-rw-top-trumps-server port=N skip-build
+python do.py run-rw-top-trumps-server port=N build=0
 ```
 or 
 ```
-python do.py run-rw-mario-gan-server port=N skip-build
+python do.py run-rw-mario-gan-server port=N build=0
 ```
-making sure that the port is different for each parallel run and the `skip-build` argument is 
-present. 
+Make sure that the port is different for each parallel run and the `build=0` is present in all 
+but the first call. 
 
 ### Troubleshooting
 
@@ -145,13 +151,12 @@ from COCO repository's root folder. The latter replaces the three commands above
 The results will be saved to the `code-experiments/build/python/exdata` folder.
 
 **Experiments in Python can be easily parallelized** by setting the number of total batches and the 
-current batch as follows (note that the experiment needs to be built first)
+current batch as follows (note that only the first experiment should be built).
 ```
-python do.py build-rw-experiment suite=rw-top-trumps
-python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=1 
-python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=2
-python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=3
-python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=4
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=1 build=1 
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=2 build=0
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=3 build=0
+python do.py run-rw-experiment suite=rw-top-trumps batches=4 batch=4 build=0
 ```
 
 See the documentation in the `rw-example-experiment.py` file for 
@@ -159,6 +164,7 @@ details.
 
 ## Running an experiment in C/C++
 
+<details><summary>Show</summary>
 See the example experiment located in the `code-experiments/build/c` folder. Change the 
 suite name and algorithm to adjust the experiment to your needs. Once the experiment is set, 
 you can call 
@@ -178,9 +184,11 @@ python do.py stop-socket-servers
 to run it on the `rw-mario-gan(-biobj)` suite.
 
 The results will be saved to the `code-experiments/build/c/exdata` folder.
+</details>
 
 ## Running an experiment in Java
 
+<details><summary>Show</summary>
 See the example experiment located in the `code-experiments/build/java` folder. Change the 
 suite name and algorithm to adjust the experiment to your needs. Once the experiment is set, 
 you can call 
@@ -200,9 +208,11 @@ python do.py stop-socket-servers
 to run it on the `rw-mario-gan(-biobj)` suite.
 
 The results will be saved to the `code-experiments/build/java/exdata` folder.
+</details>
 
 ## Running an experiment in Matlab/Octave
 
+<details><summary>Show</summary>
 See the example experiment located in the `code-experiments/build/matlab` folder. Change the 
 suite name and algorithm to adjust the experiment to your needs. Once the experiment is set, 
 you can call 
@@ -224,3 +234,4 @@ to run it on the `rw-mario-gan(-biobj)` suite.
 Replace `run-matlab` with `run-octave` to run the experiment with Octave instead of Matlab.
 
 The results will be saved to the `code-experiments/build/matlab/exdata` folder.
+</details>
