@@ -1032,19 +1032,22 @@ def build_rw_experiment(package_install_option=[], force_download=False, args=[]
         build_rw_mario_gan_server(force_download=force_download)
     else:
         raise ValueError('Suite {} not supported'.format(suite_name))
-    # Build Python and run the real-world example experiment with the given arguments
-    # Build only for the first batch
+    # Build Python
     build_python(package_install_option=package_install_option)
 
 
-def run_rw_experiment(args=[]):
-    """Runs the already built real-world experiment with the given suite that uses sockets for
-    evaluation ('toy-socket' by default).
+def run_rw_experiment(package_install_option=[], force_download=False, do_build=True, args=[]):
+    """Runs the real-world experiment with the given suite that uses sockets for evaluation
+    ('toy-socket' by default).
 
-    This does not also build the experiment, build_rw_experiment needs to be ran beforehand.
+    Builds the experiment only if so given by the arguments.
     First runs the socket server, then the real-world example experiment in Python and finally stops
     the socket server.
     """
+    if do_build:
+        build_rw_experiment(package_install_option=package_install_option,
+                            force_download=force_download, args=args)
+
     # These defaults should match those from rw_example_experiment.py
     suite_name = 'toy-socket'
     current_batch = 1
@@ -1337,7 +1340,7 @@ def main(args):
     package_install_option = []
     port = None
     force_rw_download = False  # Whether to force download of the data of the real-world problems
-    rw_skip_build = False  # Whether to skip building real-world problem servers when running them
+    rw_do_build = True  # Whether to also build real-world problem servers when running them
     for arg in args[1:]:
         if arg == 'and-test':
             also_test_python = True
@@ -1349,8 +1352,8 @@ def main(args):
             port = int(arg[5:])
         elif arg[:18] == 'force-rw-download=':
             force_rw_download = strtobool(arg[18:])
-        elif arg == 'skip-build':
-            rw_skip_build = True
+        elif arg[:6] == 'build=':
+            rw_do_build = strtobool(arg[6:])
     if cmd == 'build': build(package_install_option=package_install_option)
     elif cmd == 'run': run_all(package_install_option=package_install_option)
     elif cmd == 'test': test()
@@ -1391,16 +1394,18 @@ def main(args):
     elif cmd == 'build-rw-top-trumps-server': build_rw_top_trumps_server(force_download=force_rw_download)
     elif cmd == 'build-rw-mario-gan-server': build_rw_mario_gan_server(force_download=force_rw_download)
     elif cmd == 'build-socket-servers': build_socket_servers(force_download=force_rw_download)
-    elif cmd == 'run-toy-socket-server-c': run_toy_socket_server_c(port=port, do_build=not rw_skip_build)
-    elif cmd == 'run-toy-socket-server-python': run_toy_socket_server_python(port=port, do_build=not rw_skip_build)
-    elif cmd == 'run-rw-top-trumps-server': run_rw_top_trumps_server(port=port, force_download=force_rw_download, do_build=not rw_skip_build)
-    elif cmd == 'run-rw-mario-gan-server': run_rw_mario_gan_server(port=port, force_download=force_rw_download, do_build=not rw_skip_build)
-    elif cmd == 'run-socket-servers': run_socket_servers(force_download=force_rw_download, do_build=not rw_skip_build)
+    elif cmd == 'run-toy-socket-server-c': run_toy_socket_server_c(port=port, do_build=rw_do_build)
+    elif cmd == 'run-toy-socket-server-python': run_toy_socket_server_python(port=port, do_build=rw_do_build)
+    elif cmd == 'run-rw-top-trumps-server': run_rw_top_trumps_server(port=port, force_download=force_rw_download, do_build=rw_do_build)
+    elif cmd == 'run-rw-mario-gan-server': run_rw_mario_gan_server(port=port, force_download=force_rw_download, do_build=rw_do_build)
+    elif cmd == 'run-socket-servers': run_socket_servers(force_download=force_rw_download, do_build=rw_do_build)
     elif cmd == 'stop-socket-servers': stop_socket_servers(port=port)
     elif cmd == 'build-rw-experiment': build_rw_experiment(
         package_install_option=package_install_option, force_download=force_rw_download,
         args=args[1:])
-    elif cmd == 'run-rw-experiment': run_rw_experiment(args=args[1:])
+    elif cmd == 'run-rw-experiment': run_rw_experiment(
+        package_install_option=package_install_option, force_download=force_rw_download,
+        do_build=rw_do_build, args=args[1:])
     else: help()
 
 
