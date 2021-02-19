@@ -165,6 +165,7 @@ details.
 ## Running an experiment in C/C++
 
 <details><summary>Show</summary>
+
 See the example experiment located in the `code-experiments/build/c` folder. Change the 
 suite name and algorithm to adjust the experiment to your needs. Once the experiment is set, 
 you can call 
@@ -189,6 +190,7 @@ The results will be saved to the `code-experiments/build/c/exdata` folder.
 ## Running an experiment in Java
 
 <details><summary>Show</summary>
+
 See the example experiment located in the `code-experiments/build/java` folder. Change the 
 suite name and algorithm to adjust the experiment to your needs. Once the experiment is set, 
 you can call 
@@ -213,6 +215,7 @@ The results will be saved to the `code-experiments/build/java/exdata` folder.
 ## Running an experiment in Matlab/Octave
 
 <details><summary>Show</summary>
+
 See the example experiment located in the `code-experiments/build/matlab` folder. Change the 
 suite name and algorithm to adjust the experiment to your needs. Once the experiment is set, 
 you can call 
