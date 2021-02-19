@@ -70,7 +70,7 @@ def parse_arguments(argv):
         elif arg[:17] == 'observer_options=':
             observer_options = arg[17:]
         elif arg[:18] == 'budget_multiplier=':
-            budget_multiplier = int(arg[18:])
+            budget_multiplier = float(arg[18:])
         elif arg[:8] == 'batches=':
             batches = int(arg[8:])
         elif arg[:6] == 'batch=':
